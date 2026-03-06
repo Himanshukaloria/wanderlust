@@ -87,15 +87,15 @@ app.use((req, res, next) => {
   next();
 });
 
-//Redirect Root to listings
-app.get("/", (req, res) => {
-  res.redirect("/listings");
-});
-
 //Here we use listings and reviews routes
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
 app.use("/", userRouter);
+
+//Redirect Root to listings
+app.get("/", (req, res) => {
+  res.redirect("/listings");
+});
 
 //Middlewares
 app.use((req, res, next) => {
