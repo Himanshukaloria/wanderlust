@@ -70,11 +70,6 @@ const sessionOptions = {
   },
 };
 
-//Home Route
-// app.get("/", (req, res) => {
-//   res.send("Welcome To Home Route");
-// });
-
 app.use(session(sessionOptions));
 app.use(flash());
 
@@ -92,15 +87,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// app.get("/demouser", async (req, res) => {
-//   let fakeUser = new User({
-//     email: "srudent@gmail.com",
-//     username: "delta-student",
-//   });
-
-//   let registerdUser = await User.register(fakeUser, "helloworld");
-//   res.send(registerdUser);
-// });
+//Redirect Root to listings
+app.get("/", (req, res) => {
+  res.redirect("/listings");
+});
 
 //Here we use listings and reviews routes
 app.use("/listings", listingRouter);
