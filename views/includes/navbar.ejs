@@ -41,10 +41,16 @@
         <a class="nav-link" href="/listings">Explore</a>
       </div>
       <div class="navbar-nav ms-auto">
-        <form class="d-flex" role="search">
+        <form
+          class="d-flex"
+          role="search"
+          action="/listings/search"
+          method="GET"
+        >
           <input
             class="form-control me-2 search-inp"
             type="search"
+            name="search"
             placeholder="Search destinations"
           />
           <button class="btn search-btn" type="submit">
