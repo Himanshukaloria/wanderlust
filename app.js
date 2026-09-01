@@ -1,4 +1,4 @@
-if (process.env.NODE_ENV != "production") {
+if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
 
@@ -30,33 +30,54 @@ app.engine("ejs", ejsMate);
 app.use(express.static(path.join(__dirname, "public")));
 
 const dbUrl = process.env.ATLASDB_URL || process.env.MONGODB_URI;
+const sessionSecret = process.env.SECRET || "wanderlust-dev-secret";
 
 if (!dbUrl) {
-  throw new Error(
-    "Missing MongoDB connection string. Set ATLASDB_URL or MONGODB_URI in your .env or Render environment variables.",
+  console.error(
+    "MongoDB connection string is missing. Add ATLASDB_URL or MONGODB_URI in Render environment variables.",
   );
+  process.exit(1);
 }
 
-main()
-  .then(() => {
-    console.log("connected to database");
-    app.listen(port, () => {
-      console.log(`Listening at port : ${port}`);
+if (!/^mongodb(\+srv)?:\/\//i.test(dbUrl)) {
+  console.error(
+    "Invalid MongoDB URL format. Use the connection string copied from MongoDB Atlas > Connect > Drivers.",
+  );
+  process.exit(1);
+}
+
+const safeDbUrl = dbUrl.replace(
+  /\/\/([^:]+):([^@]+)@/,
+  "//[username]:[password]@",
+);
+
+async function startServer() {
+  try {
+    await mongoose.connect(dbUrl, {
+      serverSelectionTimeoutMS: 15000,
     });
-  })
-  .catch((err) => {
-    console.log("Database connection error:", err);
-    process.exit(1);
-  });
 
-async function main() {
-  await mongoose.connect(dbUrl);
+    console.log("Connected to MongoDB successfully.");
+
+    app.listen(port, () => {
+      console.log(`Server is running on port: ${port}`);
+    });
+  } catch (error) {
+    console.error(
+      "MongoDB connection failed. Ensure the Atlas cluster exists and the connection string is correct.",
+    );
+    console.error(`Connection target: ${safeDbUrl}`);
+    console.error(error.message);
+    process.exit(1);
+  }
 }
+
+startServer();
 
 const store = MongoStore.create({
   mongoUrl: dbUrl,
   crypto: {
-    secret: process.env.SECRET,
+    secret: sessionSecret,
   },
   touchAfter: 24 * 3600,
 });
@@ -67,7 +88,7 @@ store.on("error", (err) => {
 
 const sessionOptions = {
   store,
-  secret: process.env.SECRET,
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: true,
   cookie: {
