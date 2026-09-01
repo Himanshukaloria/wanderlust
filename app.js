@@ -4,8 +4,9 @@ if (process.env.NODE_ENV != "production") {
 
 const express = require("express");
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 8080;
 const mongoose = require("mongoose");
+app.set("trust proxy", 1);
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
@@ -28,23 +29,29 @@ app.use(methodOverride("_method"));
 app.engine("ejs", ejsMate);
 app.use(express.static(path.join(__dirname, "public")));
 
-const dbUrl = process.env.ATLASDB_URL;
+const dbUrl = process.env.ATLASDB_URL || process.env.MONGODB_URI;
+
+if (!dbUrl) {
+  throw new Error(
+    "Missing MongoDB connection string. Set ATLASDB_URL or MONGODB_URI in your .env or Render environment variables.",
+  );
+}
 
 main()
   .then(() => {
     console.log("connected to database");
+    app.listen(port, () => {
+      console.log(`Listening at port : ${port}`);
+    });
   })
   .catch((err) => {
-    console.log(err);
+    console.log("Database connection error:", err);
+    process.exit(1);
   });
 
 async function main() {
   await mongoose.connect(dbUrl);
 }
-
-app.listen(port, () => {
-  console.log(`Listening at port : ${port}`);
-});
 
 const store = MongoStore.create({
   mongoUrl: dbUrl,
@@ -67,6 +74,8 @@ const sessionOptions = {
     expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
   },
 };
 

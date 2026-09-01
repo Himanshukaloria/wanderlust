@@ -85,5 +85,5 @@ module.exports.searchListing = async (req, res) => {
     location: { $regex: search, $options: "i" },
   });
 
-  res.render("listings/index", { allListings });
+  res.render("listings/index", { allListings, search });
 };
